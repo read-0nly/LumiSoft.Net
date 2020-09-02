@@ -229,19 +229,72 @@ namespace LumiSoft.Net.STUN.Client
 
         #endregion
 
-        #region method GetPublicIP
+        #region reflection
+        public static void Reflect(string host, int port, Socket socket, IPEndPoint target)
+        {
+            if (host == null)
+            {
+                throw new ArgumentNullException("host");
+            }
+            if (socket == null)
+            {
+                throw new ArgumentNullException("socket");
+            }
+            if (port < 1)
+            {
+                throw new ArgumentException("Port value must be >= 1 !");
+            }
+            if (socket.ProtocolType != ProtocolType.Udp)
+            {
+                throw new ArgumentException("Socket must be UDP socket !");
+            }
 
-        /// <summary>
-        /// Resolves local IP to public IP using STUN.
-        /// </summary>
-        /// <param name="stunServer">STUN server.</param>
-        /// <param name="port">STUN server port. Default port is 3478.</param>
-        /// <param name="localIP">Local IP address.</param>
-        /// <returns>Returns public IP address.</returns>
-        /// <exception cref="ArgumentNullException">Is raised when <b>stunServer</b> or <b>localIP</b> is null reference.</exception>
-        /// <exception cref="ArgumentException">Is raised when any of the arguments has invalid value.</exception>
-        /// <exception cref="IOException">Is raised when no connection to STUN server.</exception>
-        public static IPAddress GetPublicIP(string stunServer,int port,IPAddress localIP)
+            IPEndPoint remoteEndPoint = new IPEndPoint(System.Net.Dns.GetHostAddresses(host)[0], port);
+
+            try
+            {
+                STUN_Message test1 = new STUN_Message();
+                test1.Type = STUN_MessageType.BindingRequest;
+                test1.ResponseAddress = target;
+                STUN_Message test1response = DoTransaction(test1, socket, remoteEndPoint, 1600);
+            }
+            catch
+            {
+            }
+        }
+
+        public static IPEndPoint ParseReflection(byte[] receiveBuffer)
+        {
+            try
+            {
+                STUN_Message response = new STUN_Message();
+                response.Parse(receiveBuffer);
+                return response.ReflectedFrom;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+                #endregion
+
+
+
+
+                #region method GetPublicIP
+
+                /// <summary>
+                /// Resolves local IP to public IP using STUN.
+                /// </summary>
+                /// <param name="stunServer">STUN server.</param>
+                /// <param name="port">STUN server port. Default port is 3478.</param>
+                /// <param name="localIP">Local IP address.</param>
+                /// <returns>Returns public IP address.</returns>
+                /// <exception cref="ArgumentNullException">Is raised when <b>stunServer</b> or <b>localIP</b> is null reference.</exception>
+                /// <exception cref="ArgumentException">Is raised when any of the arguments has invalid value.</exception>
+                /// <exception cref="IOException">Is raised when no connection to STUN server.</exception>
+                public static IPAddress GetPublicIP(string stunServer,int port,IPAddress localIP)
         {
             if(stunServer == null){
                 throw new ArgumentNullException("stunServer");
